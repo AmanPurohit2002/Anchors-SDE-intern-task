@@ -162,14 +162,13 @@ const replies = async (req, res) => {
       return res.status(404).json({ error: "Comment not found" });
     }
 
-
     comment.replies.push({ text, userId });
     await post.save();
 
     // Send email to the user who made the original comment
     const originalCommenter = await User.findById(comment.userId);
     if (originalCommenter) {
-        const commentingUser = await User.findById(userId);
+      const commentingUser = await User.findById(userId);
       const replyNotificationMessage = `
         <div style="max-width: 400px; margin: 20px auto; padding: 20px; text-align: center; background-color: #f8f8f8; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
             <p style="color: #444;"><strong>${commentingUser.name}</strong> replied to your comment on post "<strong>${post.title}</strong>".</p>
