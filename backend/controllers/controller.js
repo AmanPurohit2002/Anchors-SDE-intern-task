@@ -1,6 +1,7 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 const { generatetOtp, sendOtp, sendNotifications } = require("../otp/otp");
+const mongoose=require('mongoose');
 
 const signUpUser = async (req, res) => {
   try {
@@ -203,6 +204,82 @@ const replies = async (req, res) => {
   }
 };
 
+const getAllPosts = async (req, res) => {
+  try {
+    const {userId} = req.params;
+
+ 
+
+    const posts = await Post.aggregate([
+      {
+        $match: { userId: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          totalComments: { $size: "$comments" },
+          totalReplies: {
+            $sum: {
+              $map: {
+                input: "$comments",
+                as: "comment",
+                in: { $size: "$$comment.replies" },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllCommentedPosts = async (req, res) => {
+  try {
+    const {userId} = req.params;
+    
+    const commentedPosts = await Post.find(
+      { "comments.userId": userId }, 
+      { "comments.$": 1 } 
+    );
+
+    res.status(200).json(commentedPosts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllRepliedPosts = async (req, res) => {
+  try {
+    const {userId} = req.params
+    const repliedPosts = await Post.find(
+      { "comments.replies.userId": userId },
+      { "comments.$": 1 } // Projection to include only the matching reply
+    );
+
+    res.status(200).json(repliedPosts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllPostOfUser=async( req,res)=>{
+  try {
+    const {userId}=req.params;
+    const posts=await Post.find({userId}).sort({_id:-1});
+
+    res.status(201).json(posts);
+  } catch (error) {
+      res.status(404).json({error:error.message});
+  }
+}
+
 module.exports = {
   signUpUser,
   loginUser,
@@ -210,4 +287,8 @@ module.exports = {
   posts,
   comments,
   replies,
+  getAllPosts,
+  getAllCommentedPosts,
+  getAllRepliedPosts,
+  getAllPostOfUser
 };
