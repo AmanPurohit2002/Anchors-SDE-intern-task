@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const HomePage = () => {
   return (
-    <div className="bg-black text-white h-screen flex flex-col">
+    <div className="bg-black text-white flex flex-col mt-40">
       <div className="flex-1 flex items-center justify-center flex-col">
         <p className="text-xs text-center p-4">
           <Emoji symbol="🚀" label="rocket" />

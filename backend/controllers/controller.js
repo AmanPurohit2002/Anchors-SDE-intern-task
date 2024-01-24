@@ -46,6 +46,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+
     user.otp = undefined;
     await user.save();
 
