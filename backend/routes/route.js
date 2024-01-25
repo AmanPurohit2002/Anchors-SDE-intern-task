@@ -1,5 +1,5 @@
 const express=require('express');
-const { signUpUser, getAllUser,loginUser, posts, comments, replies, getAllPosts, getAllCommentedPosts, getAllRepliedPosts, getAllPostOfUser, loginByOtp } = require('../controllers/controller');
+const { signUpUser, getAllUser,loginUser, posts, comments, replies, getAllPosts, getAllCommentedPosts, getAllRepliedPosts, getAllPostOfUser, loginByOtp, getSpecificUserPost } = require('../controllers/controller');
 
 const router=express.Router();
 
@@ -14,6 +14,7 @@ router.get('/posts/:userId',getAllPosts);
 router.get('/commented-posts/:userId',getAllCommentedPosts)
 router.get('/replied-posts/:userId',getAllRepliedPosts);
 router.get('/activity/:userId',getAllPostOfUser);
+router.get('/activity/:userId/post/:postId',getSpecificUserPost);
 
 
 

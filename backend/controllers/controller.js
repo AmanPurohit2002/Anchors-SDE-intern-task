@@ -231,6 +231,7 @@ const replies = async (req, res) => {
   }
 };
 
+
 const getAllPosts = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -242,6 +243,8 @@ const getAllPosts = async (req, res) => {
       {
         $project: {
           _id: 1,
+          postId: "$_id", // Include the postId field
+          userId: 1, // Include the userId field
           title: 1,
           description: 1,
           totalComments: { $size: "$comments" },
@@ -264,49 +267,8 @@ const getAllPosts = async (req, res) => {
   }
 };
 
-// const getAllCommentedPosts = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
 
-//     const commentedPosts = await Post.aggregate([
-//       {
-//         $match: {
-//           "comments.userId": new mongoose.Types.ObjectId(userId),
-//         },
-//       },
-//       {
-//         $unwind: "$comments",
-//       },
-//       {
-//         $match: {
-//           "comments.userId": new mongoose.Types.ObjectId(userId),
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "users", // Assuming your user model is named "User"
-//           localField: "comments.userId",
-//           foreignField: "_id",
-//           as: "commenter",
-//         },
-//       },
-//       {
-//         $project: {
-//           _id: 0,
-//           postId: "$_id",
-//           comment: "$comments.text",
-//           commenterId: "$commenter._id",
-//           commenterName: "$commenter.name",
-//           postTitle: "$title", // Assuming your post has a title field
-//         },
-//       },
-//     ]);
 
-//     res.status(200).json(commentedPosts);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 const getAllCommentedPosts = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -451,6 +413,82 @@ const getAllPostOfUser = async (req, res) => {
   }
 };
 
+const getSpecificUserPost = async (req, res) => {
+  try {
+    const { userId, postId } = req.params;
+
+    const post = await Post.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(postId), userId: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "comments.userId",
+          foreignField: "_id",
+          as: "commentUsers",
+        },
+      },
+      {
+        $unwind: "$comments",
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "comments.replies.userId",
+          foreignField: "_id",
+          as: "replyUsers",
+        },
+      },
+      {
+        $unwind: { path: "$comments.replies", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          userId: { $first: "$userId" },
+          title: { $first: "$title" },
+          description: { $first: "$description" },
+          totalComments: { $sum: 1 },
+          totalReplies: { $sum: { $cond: { if: "$comments.replies", then: 1, else: 0 } } },
+          comments: {
+            $push: {
+              _id: "$comments._id",
+              text: "$comments.text",
+              commenterId: "$comments.userId",
+              commenterName: { $arrayElemAt: ["$commentUsers.name", 0] },
+              replies: {
+                $cond: {
+                  if: "$comments.replies",
+                  then: [{
+                    _id: "$comments.replies._id",
+                    text: "$comments.replies.text",
+                    replierId: "$comments.replies.userId",
+                    replierName: { $arrayElemAt: ["$replyUsers.name", 0] },
+                  }],
+                  else: [],
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    if (!post || post.length === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.status(200).json(post[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
+
+
 module.exports = {
   signUpUser,
   loginUser,
@@ -463,4 +501,5 @@ module.exports = {
   getAllRepliedPosts,
   getAllPostOfUser,
   loginByOtp,
+  getSpecificUserPost
 };

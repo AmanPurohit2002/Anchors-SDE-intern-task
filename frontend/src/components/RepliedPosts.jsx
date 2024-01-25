@@ -29,7 +29,7 @@ const RepliedPosts = ({ userId }) => {
             key={repliedPost.postId}
             className="hover:bg-gray-800 p-4 rounded-md border border-gray-800"
           >
-            <p className="text-white">{repliedPost.reply}</p>
+            <p className="text-white">"{repliedPost.reply}"</p>
             <h3 className="text-gray-200 font-semibold mt-2">replied on "{repliedPost.comment}"</h3>
             {/* <p className="text-gray-500">Commented by: {repliedPost.commentAuthorName}</p> */}
             <p className="text-gray-500">Post title: {repliedPost.postTitle}</p>

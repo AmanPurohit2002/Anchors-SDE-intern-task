@@ -29,7 +29,7 @@ const CommentedPosts = ({ userId }) => {
             key={commentedPost.postId}
             className="hover:bg-gray-800 p-4 rounded-md border border-gray-800"
           >
-            <p className="text-white">{commentedPost.comment}</p>
+            <p className="text-white">"{commentedPost.comment}"</p>
             <p className="text-gray-500">Post Author Name: {commentedPost.postOwnerName}</p>
             <p className="text-gray-500">Post Title: {commentedPost.postTitle}</p>
           </div>
