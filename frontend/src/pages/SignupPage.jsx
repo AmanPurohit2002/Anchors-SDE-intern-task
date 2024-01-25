@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import Emoji from "../components/Emoji";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../API/api";
 
-function SignupPage() {
+const SignupPage=()=> {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ name: "", email: "" });
   const [showOtpField, setShowOtpField] = useState(false);
@@ -10,6 +11,7 @@ function SignupPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [accountCreated, setAccountCreated] = useState(false);
   const [formErrors, setFormErrors] = useState({ name: "", email: "" });
+  const [getUserId,setUserId]=useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,66 +20,66 @@ function SignupPage() {
   const handleSubmit = (e) => e.preventDefault();
 
   const handleContinue = async () => {
+    // setShowOtpField(true);
+    if (formData.name.trim() === "" || formData.email.trim() === "") {
+      setFormErrors({
+        name: formData.name.trim() === "" ? "Name is required" : "",
+        email: formData.email.trim() === "" ? "Email is required" : "",
+      });
+    } else {
+      // Clear any previous form errors
+      setFormErrors({});
+    }
 
-    setShowOtpField(true);
-    // if (formData.name.trim() === "" || formData.email.trim() === "") {
-    //   setFormErrors({
-    //     name: formData.name.trim() === "" ? "Name is required" : "",
-    //     email: formData.email.trim() === "" ? "Email is required" : "",
-    //   });
-    // } else {
-    //   // Clear any previous form errors
-    //   setFormErrors({});
-    // }
+    try {
+      const response = await fetch(API_URL + "/auth/signUp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    // try {
-    //   const response = await fetch("http://127.0.0.1:8080/auth/signUp", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(formData),
-    //   });
+      await response.json();
 
-    //   await response.json();
-
-    //   if (response.ok) {
-    //     setShowOtpField(true);
-    //   } else {
-    //     console.log("fill all values");
-    //   }
-    // } catch (error) {
-    //   console.error("Error:", error);
-    // }
+      if (response.ok) {
+        setShowOtpField(true);
+      } else {
+        console.log("fill all values");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   const handleVerifyOtp = async () => {
+    // setSuccessMessage("Account created successfully!");
+    // setAccountCreated(true);
+    try {
+      const response = await fetch(API_URL + "/auth/newLogin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: formData.email, otp }),
+      });
+
+      const result=await response.json();
+      setUserId(result._id);
+
+      if (response.ok) {
         setSuccessMessage("Account created successfully!");
         setAccountCreated(true);
-    // try {
-    //   const response = await fetch("http://127.0.0.1:8080/auth/login", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({ email: formData.email, otp }),
-    //   });
-
-    //   await response.json();
-
-    //   if (response.ok) {
-    //     setSuccessMessage("Account created successfully!");
-    //     setAccountCreated(true);
-    //   } else {
-    //     console.log("Error verifying OTP");
-    //   }
-    // } catch (error) {
-    //   console.error("Error:", error);
-    // }
+      } else {
+        console.log("Error verifying OTP");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   const handleCreatePost = () => {
-    navigate("/dashboard");
+    navigate("/dashboard/"+ getUserId);
   };
 
   return (
@@ -117,7 +119,9 @@ function SignupPage() {
                 placeholder="Enter Email ID"
               />
               {formErrors.email && (
-                <p className="text-red-500 text-xs italic">{formErrors.email}</p>
+                <p className="text-red-500 text-xs italic">
+                  {formErrors.email}
+                </p>
               )}
             </div>
             <div className="flex items-center justify-between">
@@ -140,8 +144,12 @@ function SignupPage() {
                   <h1>Create Your Account</h1>
                 </div>
                 <div className="mb-4 flex flex-col justify-center items-center">
-                    <label className="text-gray-500">Please verify your email ID to continue</label>
-                    <label className="text-gray-500">We have send an OTP to this {formData.email}</label>
+                  <label className="text-gray-500">
+                    Please verify your email ID to continue
+                  </label>
+                  <label className="text-gray-500">
+                    We have send an OTP to this {formData.email}
+                  </label>
                 </div>
                 <div className="mb-4">
                   <input
@@ -166,7 +174,7 @@ function SignupPage() {
             ) : (
               <>
                 <div className="mb-12 flex justify-center flex-col items-center">
-                  <Emoji symbol="✅" label="rocket"/>
+                  <Emoji symbol="✅" label="rocket" />
                   <h1>{successMessage}</h1>
                 </div>
 

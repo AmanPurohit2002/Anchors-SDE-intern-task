@@ -22,7 +22,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/dashboard" element={<UserDashBoard/>} />
+          <Route path="/dashboard/:userId" element={<UserDashBoard/>} />
         </Routes>
       </Router>
     </div>

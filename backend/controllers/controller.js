@@ -1,7 +1,37 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 const { generatetOtp, sendOtp, sendNotifications } = require("../otp/otp");
-const mongoose=require('mongoose');
+const mongoose = require("mongoose");
+
+const loginByOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const getOtp = generatetOtp();
+
+    const existingUser = await User.findOneAndUpdate(
+      { email },
+      { $set: { otp: getOtp } },
+      { new: true }
+    );
+
+
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    await sendOtp(email, getOtp);
+
+    return res
+      .status(201)
+      .json({
+        message:
+          "Account created successfully. Check your email for OTP verification.",
+      });
+  } catch (error) {
+    return res.status(401).json({ error: error.message });
+  }
+};
 
 const signUpUser = async (req, res) => {
   try {
@@ -45,7 +75,6 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-
 
     user.otp = undefined;
     await user.save();
@@ -207,9 +236,7 @@ const replies = async (req, res) => {
 
 const getAllPosts = async (req, res) => {
   try {
-    const {userId} = req.params;
-
- 
+    const { userId } = req.params;
 
     const posts = await Post.aggregate([
       {
@@ -234,7 +261,6 @@ const getAllPosts = async (req, res) => {
       },
     ]);
 
-
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -243,11 +269,11 @@ const getAllPosts = async (req, res) => {
 
 const getAllCommentedPosts = async (req, res) => {
   try {
-    const {userId} = req.params;
-    
+    const { userId } = req.params;
+
     const commentedPosts = await Post.find(
-      { "comments.userId": userId }, 
-      { "comments.$": 1 } 
+      { "comments.userId": userId },
+      { "comments.$": 1 }
     );
 
     res.status(200).json(commentedPosts);
@@ -258,7 +284,7 @@ const getAllCommentedPosts = async (req, res) => {
 
 const getAllRepliedPosts = async (req, res) => {
   try {
-    const {userId} = req.params
+    const { userId } = req.params;
     const repliedPosts = await Post.find(
       { "comments.replies.userId": userId },
       { "comments.$": 1 } // Projection to include only the matching reply
@@ -270,16 +296,16 @@ const getAllRepliedPosts = async (req, res) => {
   }
 };
 
-const getAllPostOfUser=async( req,res)=>{
+const getAllPostOfUser = async (req, res) => {
   try {
-    const {userId}=req.params;
-    const posts=await Post.find({userId}).sort({_id:-1});
+    const { userId } = req.params;
+    const posts = await Post.find({ userId }).sort({ _id: -1 });
 
     res.status(201).json(posts);
   } catch (error) {
-      res.status(404).json({error:error.message});
+    res.status(404).json({ error: error.message });
   }
-}
+};
 
 module.exports = {
   signUpUser,
@@ -291,5 +317,6 @@ module.exports = {
   getAllPosts,
   getAllCommentedPosts,
   getAllRepliedPosts,
-  getAllPostOfUser
+  getAllPostOfUser,
+  loginByOtp
 };
