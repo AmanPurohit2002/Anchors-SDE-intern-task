@@ -15,19 +15,16 @@ const loginByOtp = async (req, res) => {
       { new: true }
     );
 
-
     if (!existingUser) {
-      return res.status(404).json({ error: 'User not found.' });
+      return res.status(404).json({ error: "User not found." });
     }
 
     await sendOtp(email, getOtp);
 
-    return res
-      .status(201)
-      .json({
-        message:
-          "Account created successfully. Check your email for OTP verification.",
-      });
+    return res.status(201).json({
+      message:
+        "Account created successfully. Check your email for OTP verification.",
+    });
   } catch (error) {
     return res.status(401).json({ error: error.message });
   }
@@ -267,14 +264,96 @@ const getAllPosts = async (req, res) => {
   }
 };
 
+// const getAllCommentedPosts = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     const commentedPosts = await Post.aggregate([
+//       {
+//         $match: {
+//           "comments.userId": new mongoose.Types.ObjectId(userId),
+//         },
+//       },
+//       {
+//         $unwind: "$comments",
+//       },
+//       {
+//         $match: {
+//           "comments.userId": new mongoose.Types.ObjectId(userId),
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "users", // Assuming your user model is named "User"
+//           localField: "comments.userId",
+//           foreignField: "_id",
+//           as: "commenter",
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+//           postId: "$_id",
+//           comment: "$comments.text",
+//           commenterId: "$commenter._id",
+//           commenterName: "$commenter.name",
+//           postTitle: "$title", // Assuming your post has a title field
+//         },
+//       },
+//     ]);
+
+//     res.status(200).json(commentedPosts);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 const getAllCommentedPosts = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const commentedPosts = await Post.find(
-      { "comments.userId": userId },
-      { "comments.$": 1 }
-    );
+    const commentedPosts = await Post.aggregate([
+      {
+        $match: {
+          "comments.userId": new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $unwind: "$comments",
+      },
+      {
+        $match: {
+          "comments.userId": new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "comments.userId",
+          foreignField: "_id",
+          as: "commenter",
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "userId",
+          foreignField: "_id",
+          as: "postOwner",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          postId: "$_id",
+          comment: "$comments.text",
+          commenterId: "$commenter._id",
+          commenterName: "$commenter.name",
+          postTitle: "$title",
+          postOwnerId: "$postOwner._id",
+          postOwnerName: "$postOwner.name",
+        },
+      },
+    ]);
 
     res.status(200).json(commentedPosts);
   } catch (error) {
@@ -282,18 +361,83 @@ const getAllCommentedPosts = async (req, res) => {
   }
 };
 
+
+
+
 const getAllRepliedPosts = async (req, res) => {
   try {
     const { userId } = req.params;
-    const repliedPosts = await Post.find(
-      { "comments.replies.userId": userId },
-      { "comments.$": 1 } // Projection to include only the matching reply
-    );
+
+    const repliedPosts = await Post.aggregate([
+      {
+        $match: {
+          "comments.replies.userId": new mongoose.Types.ObjectId(userId),
+          $or: [
+            { "comments.text": { $exists: true, $ne: "" } }, // Include posts with original comments
+            { "comments.replies.text": { $exists: true, $ne: "" } }, // Include posts with replies
+          ],
+        },
+      },
+      {
+        $unwind: "$comments",
+      },
+      {
+        $unwind: {
+          path: "$comments.replies",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "comments.userId",
+          foreignField: "_id",
+          as: "commenterInfo",
+        },
+      },
+      {
+        $unwind: "$commenterInfo",
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "comments.replies.userId",
+          foreignField: "_id",
+          as: "replierInfo",
+        },
+      },
+      {
+        $unwind: "$replierInfo",
+      },
+      {
+        $project: {
+          postId: "$_id",
+          comment: "$comments.text",
+          commentAuthorId: "$comments.userId",
+          commentAuthorName: "$commenterInfo.name", // Assuming the name field in your user collection
+          reply: "$comments.replies.text",
+          replierId: "$comments.replies.userId",
+          replierName: "$replierInfo.name", // Assuming the name field in your user collection
+          postTitle: "$title", // Replace with the actual field representing post title
+          postAuthorId: "$userId",
+          postAuthorName: "$replierInfo.name", // Assuming the name field in your user collection
+        },
+      },
+    ]);
 
     res.status(200).json(repliedPosts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+
+
+
+
+
+module.exports = {
+  getAllRepliedPosts,
 };
 
 const getAllPostOfUser = async (req, res) => {
@@ -318,5 +462,5 @@ module.exports = {
   getAllCommentedPosts,
   getAllRepliedPosts,
   getAllPostOfUser,
-  loginByOtp
+  loginByOtp,
 };

@@ -19,7 +19,7 @@ const AllPosts = ({ userId }) => {
   }, [userId]);
 
   return (
-    <div className="flex-grow bg-black-900 p-6 mb-4">
+    <div className="flex-grow bg-black-900 p-6 mb-4 w-[40vw]">
       <h2 className="mb-4">All Post ({posts.length})</h2>
       <div className="space-y-4 hover:cursor-pointer">
         {posts.map((post) => (
