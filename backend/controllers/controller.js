@@ -430,7 +430,7 @@ const getSpecificUserPost = async (req, res) => {
         },
       },
       {
-        $unwind: "$comments",
+        $unwind: { path: "$comments", preserveNullAndEmptyArrays: true },
       },
       {
         $lookup: {
@@ -449,7 +449,7 @@ const getSpecificUserPost = async (req, res) => {
           userId: { $first: "$userId" },
           title: { $first: "$title" },
           description: { $first: "$description" },
-          totalComments: { $sum: 1 },
+          totalComments: { $sum: { $cond: { if: "$comments", then: 1, else: 0 } } },
           totalReplies: { $sum: { $cond: { if: "$comments.replies", then: 1, else: 0 } } },
           comments: {
             $push: {
@@ -484,6 +484,7 @@ const getSpecificUserPost = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 
