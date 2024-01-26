@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Emoji from "../components/Emoji";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../API/api";
+import { AuthContext } from "../ContextApi/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const LoginPage = () => {
   const [accountCreated, setAccountCreated] = useState(false);
   const [formErrors, setFormErrors] = useState({ email: "" });
   const [getUserId, setUserId] = useState("");
+  const {handleLogin}=useContext(AuthContext);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -76,6 +78,7 @@ const LoginPage = () => {
   };
 
   const handleCreatePost = () => {
+    handleLogin();
     navigate("/dashboard/" + getUserId);
   };
 

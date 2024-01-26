@@ -83,15 +83,84 @@ const loginUser = async (req, res) => {
   }
 };
 
+// const getAllUser = async (req, res) => {
+//   try {
+//     const userData = await User.find().sort({ _id: -1 });
+
+//     res.status(200).json(userData);
+//   } catch (error) {
+//     return res.status(401).json({ error: error.message });
+//   }
+// };
+
 const getAllUser = async (req, res) => {
   try {
-    const userData = await User.find().sort({ _id: -1 });
+    const usersData = await User.aggregate([
+      {
+        $lookup: {
+          from: "posts", // Replace with your actual post collection name
+          localField: "_id",
+          foreignField: "userId",
+          as: "userPosts",
+        },
+      },
+      {
+        $unwind: { path: "$userPosts", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "comments", // Replace with your actual comment collection name
+          localField: "userPosts._id",
+          foreignField: "postId",
+          as: "postComments",
+        },
+      },
+      {
+        $unwind: { path: "$postComments", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "users", // Replace with your actual user collection name
+          localField: "postComments.userId",
+          foreignField: "_id",
+          as: "commentUsers",
+        },
+      },
+      {
+        $unwind: { path: "$postComments.replies", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+          posts: {
+            $push: {
+              postId: "$userPosts._id",
+              postTitle: "$userPosts.title",
+              postDescription: "$userPosts.description",
+              totalComments: { $sum: { $cond: { if: "$postComments", then: 1, else: 0 } } },
+              comments: {
+                commentId: "$postComments._id",
+                commentText: "$postComments.text",
+                commenterId: "$postComments.userId",
+                commenterName: { $arrayElemAt: ["$commentUsers.name", 0] },
+              },
+            },
+          },
+        },
+      },
+    ]);
 
-    res.status(200).json(userData);
+    res.status(200).json(usersData);
   } catch (error) {
-    return res.status(401).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
+
+module.exports = getAllUser;
+
+
 
 const posts = async (req, res) => {
   try {
