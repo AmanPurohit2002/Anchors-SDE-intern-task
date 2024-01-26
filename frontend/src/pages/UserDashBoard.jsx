@@ -15,7 +15,9 @@ const UserDashBoard = () => {
   };
 
   return (
+    <div>
     <div className="flex">
+    
       <LeftSidebar onSelectLink={handleSelectLink} />
       <div className="flex-1 p-8">
         {/* Right side content based on the selected link */}
@@ -24,6 +26,7 @@ const UserDashBoard = () => {
         {selectedLink === "replied" && <RepliedPosts userId={userId}/>}
         {selectedLink === "create" && <PostForm userId={userId}/>}
       </div>
+    </div>
     </div>
   );
 };

@@ -35,14 +35,23 @@ const AllPosts = ({ userId }) => {
               onClick={() => toggleExpandedPost(post.postId)}
               className="hover:bg-gray-800 p-4 rounded-md border border-gray-800"
             >
-              <h3 className="text-white font-semibold">{post.title}</h3>
-              <p className="text-gray-500">
-                <span>{post.totalComments} comment</span>
-                <span className="mx-2"></span>
-                <span>{post.totalReplies} reply</span>
-              </p>
+              {expandedPostId !== post.postId && (
+                <>
+                  <h3 className="text-white font-semibold">{post.title}</h3>
+                  <p className="text-gray-500">
+                    <span>{post.totalComments} comment</span>
+                    <span className="mx-2"></span>
+                    <span>{post.totalReplies} reply</span>
+                  </p>
+                </>
+              )}
               {expandedPostId === post.postId && (
-                <PostDetail postId={post.postId} totalComments={post.totalComments} totalReplies={post.totalReplies} userId={userId}/>
+                <PostDetail
+                  postId={post.postId}
+                  totalComments={post.totalComments}
+                  totalReplies={post.totalReplies}
+                  userId={userId}
+                />
               )}
             </div>
           ))}
