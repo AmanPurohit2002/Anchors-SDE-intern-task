@@ -95,56 +95,101 @@ const loginUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
   try {
-    const usersData = await User.aggregate([
+    const postsData = await Post.aggregate([
       {
         $lookup: {
-          from: "posts", // Replace with your actual post collection name
-          localField: "_id",
-          foreignField: "userId",
-          as: "userPosts",
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
         },
       },
       {
-        $unwind: { path: "$userPosts", preserveNullAndEmptyArrays: true },
+        $unwind: '$user',
       },
       {
         $lookup: {
-          from: "comments", // Replace with your actual comment collection name
-          localField: "userPosts._id",
-          foreignField: "postId",
-          as: "postComments",
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'postId',
+          as: 'comments',
         },
       },
       {
-        $unwind: { path: "$postComments", preserveNullAndEmptyArrays: true },
+        $unwind: {
+          path: '$comments',
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $lookup: {
-          from: "users", // Replace with your actual user collection name
-          localField: "postComments.userId",
-          foreignField: "_id",
-          as: "commentUsers",
+          from: 'users',
+          localField: 'comments.userId',
+          foreignField: '_id',
+          as: 'commentUser',
         },
       },
       {
-        $unwind: { path: "$postComments.replies", preserveNullAndEmptyArrays: true },
+        $unwind: {
+          path: '$comments.replies',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'comments.replies.userId',
+          foreignField: '_id',
+          as: 'replyUser',
+        },
       },
       {
         $group: {
-          _id: "$_id",
-          name: { $first: "$name" },
-          email: { $first: "$email" },
+          _id: {
+            userId: '$user._id',
+            postId: '$_id',
+          },
+          name: { $first: '$user.name' },
+          email: { $first: '$user.email' },
           posts: {
             $push: {
-              postId: "$userPosts._id",
-              postTitle: "$userPosts.title",
-              postDescription: "$userPosts.description",
-              totalComments: { $sum: { $cond: { if: "$postComments", then: 1, else: 0 } } },
+              postId: '$_id',
+              title: '$title',
+              description: '$description',
+              comments: '$comments',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.userId',
+          name: { $first: '$name' },
+          email: { $first: '$email' },
+          posts: {
+            $push: {
+              postId: '$posts.postId',
+              title: '$posts.title',
+              description: '$posts.description',
               comments: {
-                commentId: "$postComments._id",
-                commentText: "$postComments.text",
-                commenterId: "$postComments.userId",
-                commenterName: { $arrayElemAt: ["$commentUsers.name", 0] },
+                $push: {
+                  commentId: '$posts.comments._id',
+                  commentText: '$posts.comments.text',
+                  commenter: {
+                    userId: '$posts.comments.userId',
+                    userName: { $arrayElemAt: ['$commentUser.name', 0] },
+                  },
+                  replies: {
+                    $push: {
+                      replyId: '$posts.comments.replies._id',
+                      replyText: '$posts.comments.replies.text',
+                      replier: {
+                        userId: '$posts.comments.replies.userId',
+                        userName: { $arrayElemAt: ['$replyUser.name', 0] },
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -152,13 +197,22 @@ const getAllUser = async (req, res) => {
       },
     ]);
 
-    res.status(200).json(usersData);
+    res.status(200).json(postsData);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = getAllUser;
+
+
+
+
+
+
+
+
+
+
 
 
 
