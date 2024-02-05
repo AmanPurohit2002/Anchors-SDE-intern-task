@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import {AuthContext} from "../ContextApi/AuthContext";
 
 const Header = () => {
-    const {isLoggedIn}=useContext(AuthContext);
+    const {isLoggedIn,handleLogout}=useContext(AuthContext);
     const navigate=useNavigate();
 
     const handleNavigate=()=>{
+        handleLogout();
         navigate('/')
     }
 
